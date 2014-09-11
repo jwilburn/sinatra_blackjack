@@ -1,0 +1,16 @@
+form#hit_form {
+  float: left;
+  margin-right: 10px;
+}
+
+form#hit_stay {
+  float: left;
+}
+
+img.card {
+  margin: 5px;
+}
+
+div.total h4 {
+    color: #ff0000;
+}
