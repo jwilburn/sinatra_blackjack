@@ -5,11 +5,13 @@ set :sessions, true
 
 BLACKJACK = 21
 DEALER_HITS_AT = 17
+INITIAL_POT = 10000
 
 helpers do
-  def blank?(player_name)
-    return true if player_name.empty?
-    return true if player_name.strip.length == 0
+  def blank?(input)
+    return true if input.empty?
+    return true if input.nil?
+    return true if input.strip.length == 0
   end
 
   def total(cards)
@@ -61,19 +63,21 @@ helpers do
   def won(msg)
     @play_again = true
     @show_hitstay = false
-    @info = "#{session[:player_name]} won. #{msg}"
+    session[:player_pot] = session[:player_pot] + session[:player_bet].to_i
+    @winner = "#{session[:player_name]} won. #{msg}"
   end
 
   def lost(msg)
     @play_again = true
     @show_hitstay = false
-    @error = "#{session[:player_name]} lost. #{msg}"
+    session[:player_pot] = session[:player_pot] - session[:player_bet].to_i
+    @loser = "#{session[:player_name]} lost. #{msg}"
   end
 
   def tie(msg)
     @play_again = true
     @show_hitstay = false
-    @info = "Tie Game"
+    @winner = "Tie Game"
   end
 
   def blackjack_flop?
@@ -98,6 +102,7 @@ end
 
 get '/new' do
   session[:player_name] = nil
+  session[:player_pot] = INITIAL_POT
   erb :new
 end
 
@@ -107,12 +112,12 @@ post '/new' do
     halt erb(:new)
   else
     session[:player_name] = params[:player_name].rstrip
-    redirect '/game'
+    redirect '/game/player/bet'
   end
 end
 
 get '/game' do
-  if !session[:player_name].nil?
+  if !session[:player_name].nil? || !session[:player_bet].nil?
     session[:current_player] = session[:player_name]
     suits = ['H', 'S', 'D', 'C']
     values = [*2..10, 'J', 'Q', 'K', 'A']
@@ -123,11 +128,14 @@ get '/game' do
     session[:dealer_cards] << session[:deck].pop
     session[:player_cards] << session[:deck].pop
     session[:dealer_cards] << session[:deck].pop
-  elsif blackjack_flop?
-    redirect '/game/compare'
   else
     redirect '/new'
   end
+
+  # if blackjack_flop?
+  #   session[:current_player] = nil
+  #   redirect '/game/compare'
+  # end
 
   erb :game
 end
@@ -138,15 +146,37 @@ post '/game/player/hit' do
   if player_total > BLACKJACK
     lost("#{session[:player_name]} busted")
   elsif player_total == BLACKJACK
-    won("Blackjack")
+    won("#{session[:player_name]} hit Blackjack")
   end
-  erb :game
+  erb :game, layout: false
 end
 
 post '/game/player/stay' do
   @info = "#{session[:player_name]} chose to stay"
   @show_hitstay = false
   redirect '/game/dealer'
+end
+
+get '/game/player/bet' do
+  session[:player_bet] = nil
+  if session[:player_pot] == 0
+    redirect '/game_over'
+  else
+    erb :bet
+  end
+end
+
+post '/game/player/bet' do
+  if blank?(params[:player_bet])
+    @error = "Bet cannot be blank / empty"
+    halt erb(:bet)
+  elsif params[:player_bet].to_i <= 0 || params[:player_bet].to_i > session[:player_pot]
+    @error = "Bet must be greater than $0 and less than $#{session[:player_pot]}"
+    halt erb(:bet)
+  else
+    session[:player_bet] = params[:player_bet].to_i
+    redirect '/game'
+  end
 end
 
 get '/game/dealer' do
@@ -157,14 +187,14 @@ get '/game/dealer' do
   if dealer_total > BLACKJACK
     won("Dealer busted")
   elsif dealer_total == BLACKJACK
-    lost("Blackjack. Dealer wins.")
+    lost("Dealer won with Blackjack.")
   elsif dealer_total >= DEALER_HITS_AT
     redirect '/game/compare'
   else
     @dealer_hit = true
   end
 
-  erb :game
+  erb :game, layout: false
 end
 
 get '/game/compare' do
@@ -180,7 +210,7 @@ get '/game/compare' do
     tie("Tie game")
   end
 
-  erb :game
+  erb :game, layout: false
 end
 
 post '/game/dealer/hit' do

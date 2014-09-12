@@ -4,6 +4,8 @@
     <title>Sinatra :: Blackjack</title>
     <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="/application.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script type="text/javascript" src="/application.js"></script>
   </head>
   <body style="padding-top: 50px;">
 
@@ -18,8 +20,6 @@
     </div>
 
   <div class="container">
-    <h1>Sinatra Blackjack</h1>
-    <hr />
     <%if @error %>
       <div class="alert alert-error"><%=@error%></div>
     <% end %>

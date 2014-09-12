@@ -1,7 +1,6 @@
-<h1>Sinatra Blackjack</h1>
-<hr />
-<h4></h1>
-<form action='/name' method='post'>
-  <input type="text" name="user_name" />
+<form action='/game/player/bet' method='post'>
+  <h5><%= session[:player_name] %> has $<%= session[:player_pot] %></h5>
+  <h5>Enter your bet</h5>
+  <input type="text" name="player_bet" />
   <div><input type="submit" class="btn btn-primary" /></div>
 </form>
